@@ -1,0 +1,31 @@
+fabric,test_kind,pair,reading,r,g,b,clear,notes
+light grey,same fabric,1,A,306,394,353,1106,different sampled areas
+light grey,same fabric,1,B,306,395,354,1109,different sampled areas
+light grey,same fabric,2,A,302,389,350,1094,different sampled areas
+light grey,same fabric,2,B,306,394,354,1108,different sampled areas
+light grey,same fabric,3,A,306,395,355,1110,different sampled areas
+light grey,same fabric,3,B,275,355,318,997,lower brightness but closely matching colour proportions
+dark green,same fabric,1,A,81,138,114,350,nearby areas on slightly shiny fabric
+dark green,same fabric,1,B,81,138,114,350,nearby areas on slightly shiny fabric
+dark green,same fabric,2,A,86,146,121,372,orientation changed between readings
+dark green,same fabric,2,B,80,135,112,344,orientation changed between readings
+dark green,same fabric,3,A,80,135,112,345,shinier and less shiny areas
+dark green,same fabric,3,B,80,136,112,346,shinier and less shiny areas
+light grey vs dark grey,related shades,1,A,311,401,360,1126,light grey
+light grey vs dark grey,related shades,1,B,197,271,256,760,dark grey
+light grey vs dark grey,related shades,2,A,308,398,357,1117,light grey
+light grey vs dark grey,related shades,2,B,199,273,257,766,dark grey
+light grey vs dark grey,related shades,3,A,305,394,354,1107,light grey
+light grey vs dark grey,related shades,3,B,196,269,254,755,dark grey
+light blue vs dark blue,related shades,1,A,243,580,530,1421,light blue
+light blue vs dark blue,related shades,1,B,177,369,464,1058,dark blue
+light blue vs dark blue,related shades,2,A,244,581,532,1425,light blue
+light blue vs dark blue,related shades,2,B,178,371,468,1065,dark blue
+light blue vs dark blue,related shades,3,A,242,578,529,1416,light blue
+light blue vs dark blue,related shades,3,B,177,368,463,1056,dark blue
+light grey,final validation match,1,A,307,396,355,1113,result Match 99%
+light grey,final validation match,1,B,306,395,355,1110,result Match 99%
+light grey vs dark grey,final validation similar,1,A,309,399,358,1121,result Similar 71%
+light grey vs dark grey,final validation similar,1,B,197,270,255,757,result Similar 71%
+yellow vs purple,final validation different,1,A,778,706,340,1927,result Different 0%
+yellow vs purple,final validation different,1,B,122,171,257,577,result Different 0%

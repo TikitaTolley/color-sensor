@@ -1,0 +1,13 @@
+colour,sample_count,average_r,average_g,average_b,average_clear,role,material,measurement_method
+black,5,47.2,74.0,67.8,204.4,calibration endpoint,solid black felt,built-in shroud held flush against fabric
+white,5,632.2,825.0,751.6,2317.6,calibration endpoint,solid white felt,built-in shroud held flush against fabric
+orange,5,568.4,279.4,208.0,1079.0,validation colour,solid orange felt,built-in shroud held flush against fabric
+red,5,251.0,98.2,98.8,455.6,validation colour,solid red felt,built-in shroud held flush against fabric
+light blue,5,243.6,579.8,531.2,1422.4,validation colour,solid light blue felt,built-in shroud held flush against fabric
+dark blue,5,175.8,366.2,462.2,1051.6,validation colour,solid dark blue felt,built-in shroud held flush against fabric
+light green,5,290.6,557.8,265.4,1177.8,validation colour,solid light green felt,built-in shroud held flush against fabric
+dark green,5,79.4,134.6,111.2,342.8,validation colour,slightly shiny dark green fabric,built-in shroud held flush against fabric
+light grey,5,306.8,395.4,355.2,1111.0,validation colour,solid light grey felt,built-in shroud held flush against fabric
+dark grey,5,196.0,269.4,254.2,754.4,validation colour,solid dark grey felt,built-in shroud held flush against fabric
+purple,5,120.8,169.4,254.0,570.2,validation colour,solid purple felt,built-in shroud held flush against fabric
+yellow,5,773.0,701.4,336.0,1912.4,validation colour,solid yellow felt,built-in shroud held flush against fabric

@@ -7,12 +7,58 @@ constexpr int SENSOR_RX = 9;  // Connected to GY-33 CT
 constexpr int SENSOR_TX = 8;  // Connected to GY-33 DR
 constexpr int OLED_SDA = 4;
 constexpr int OLED_SCL = 5;
-constexpr int BUTTON_PIN = 7;
+constexpr int SCAN_BUTTON_PIN = 7;
+constexpr int SAVE_BUTTON_PIN = 10;
+constexpr int CLEAR_BUTTON_PIN = 12;
 constexpr int OLED_WIDTH = 128;
 constexpr int OLED_HEIGHT = 64;
 constexpr int OLED_RESET = -1;
 constexpr uint8_t OLED_ADDRESS = 0x3C;
+constexpr uint8_t SCAN_SAMPLE_COUNT = 10;
 constexpr unsigned long BUTTON_DEBOUNCE_MS = 30;
+constexpr float COLOUR_DISTANCE_WEIGHT = 400.0f;
+constexpr float BRIGHTNESS_DIFFERENCE_WEIGHT = 60.0f;
+constexpr int MATCH_SCORE_THRESHOLD = 85;
+constexpr int SIMILAR_SCORE_THRESHOLD = 45;
+
+// Provisional calibration measured with the sensor shroud held against fabric.
+// Replace these values after the final sensor enclosure is fitted.
+constexpr float BLACK_RED = 47.2f;
+constexpr float BLACK_GREEN = 74.0f;
+constexpr float BLACK_BLUE = 67.8f;
+constexpr float BLACK_CLEAR = 204.4f;
+constexpr float WHITE_RED = 632.2f;
+constexpr float WHITE_GREEN = 825.0f;
+constexpr float WHITE_BLUE = 751.6f;
+constexpr float WHITE_CLEAR = 2317.6f;
+
+struct ColourReading {
+  uint16_t red;
+  uint16_t green;
+  uint16_t blue;
+  uint16_t clear;
+};
+
+struct CalibratedReading {
+  float red;
+  float green;
+  float blue;
+  float clear;
+};
+
+struct MatchResult {
+  float colourDistance;
+  float brightnessDifference;
+  int score;
+  const char* label;
+};
+
+struct Button {
+  int pin;
+  bool lastReading;
+  bool stableState;
+  unsigned long lastChangeAt;
+};
 
 Adafruit_SSD1306 display(OLED_WIDTH, OLED_HEIGHT, &Wire, OLED_RESET);
 bool oledReady = false;
@@ -21,10 +67,24 @@ uint8_t packet[13];
 size_t packetPosition = 0;
 unsigned long lastByteAt = 0;
 unsigned long lastReadingAt = 0;
-unsigned long lastButtonChangeAt = 0;
-bool lastButtonReading = HIGH;
-bool buttonState = HIGH;
-bool captureRequested = false;
+
+Button scanButton = {SCAN_BUTTON_PIN, HIGH, HIGH, 0};
+Button saveButton = {SAVE_BUTTON_PIN, HIGH, HIGH, 0};
+Button clearButton = {CLEAR_BUTTON_PIN, HIGH, HIGH, 0};
+
+bool scanInProgress = false;
+uint8_t samplesCollected = 0;
+uint32_t redTotal = 0;
+uint32_t greenTotal = 0;
+uint32_t blueTotal = 0;
+uint32_t clearTotal = 0;
+
+ColourReading currentReading = {0, 0, 0, 0};
+ColourReading savedColourA = {0, 0, 0, 0};
+ColourReading savedColourB = {0, 0, 0, 0};
+bool currentReadingAvailable = false;
+bool colourASaved = false;
+bool colourBSaved = false;
 
 void sendCommand(uint8_t command) {
   const uint8_t message[] = {
@@ -40,51 +100,229 @@ uint16_t readChannel(size_t offset) {
     | packet[offset + 1];
 }
 
-void displayReading(uint16_t red, uint16_t green, uint16_t blue, uint16_t clear) {
+float calibrateChannel(uint16_t raw, float black, float white) {
+  const float corrected = 255.0f * (static_cast<float>(raw) - black) / (white - black);
+  return constrain(corrected, 0.0f, 255.0f);
+}
+
+CalibratedReading calibrateReading(const ColourReading& reading) {
+  return {
+    calibrateChannel(reading.red, BLACK_RED, WHITE_RED),
+    calibrateChannel(reading.green, BLACK_GREEN, WHITE_GREEN),
+    calibrateChannel(reading.blue, BLACK_BLUE, WHITE_BLUE),
+    calibrateChannel(reading.clear, BLACK_CLEAR, WHITE_CLEAR)
+  };
+}
+
+int roundedChannel(float value) {
+  return static_cast<int>(value + 0.5f);
+}
+
+MatchResult compareReadings(const ColourReading& a, const ColourReading& b) {
+  const float clearA = max(static_cast<float>(a.clear), 1.0f);
+  const float clearB = max(static_cast<float>(b.clear), 1.0f);
+
+  const float redDifference = (a.red / clearA) - (b.red / clearB);
+  const float greenDifference = (a.green / clearA) - (b.green / clearB);
+  const float blueDifference = (a.blue / clearA) - (b.blue / clearB);
+  const float colourDistance = sqrtf(
+    redDifference * redDifference
+    + greenDifference * greenDifference
+    + blueDifference * blueDifference
+  );
+  const float largerClear = max(clearA, clearB);
+  const float brightnessDifference = abs(clearA - clearB) / largerClear;
+  const float rawScore = 100.0f
+    - colourDistance * COLOUR_DISTANCE_WEIGHT
+    - brightnessDifference * BRIGHTNESS_DIFFERENCE_WEIGHT;
+  const int score = roundedChannel(constrain(rawScore, 0.0f, 100.0f));
+
+  const char* label = "Different";
+  if (score >= MATCH_SCORE_THRESHOLD) {
+    label = "Match";
+  } else if (score >= SIMILAR_SCORE_THRESHOLD) {
+    label = "Similar";
+  }
+
+  return {colourDistance, brightnessDifference, score, label};
+}
+
+void startScreen(const char* heading) {
   if (!oledReady) return;
 
   display.clearDisplay();
   display.setCursor(0, 0);
-  display.println("Captured RGBC");
+  display.println(heading);
   display.println();
-  display.printf("R: %u\n", static_cast<unsigned int>(red));
-  display.printf("G: %u\n", static_cast<unsigned int>(green));
-  display.printf("B: %u\n", static_cast<unsigned int>(blue));
-  display.printf("C: %u\n", static_cast<unsigned int>(clear));
-  display.println();
-  display.print("Press to scan again");
+}
+
+void finishScreen() {
+  if (!oledReady) return;
   display.display();
+}
+
+void displayReady() {
+  startScreen("Colour matcher");
+  display.println("Ready");
+  display.println();
+  display.println("SCAN: capture");
+  display.println("SAVE: keep colour");
+  display.println("CLEAR: undo");
+  finishScreen();
 }
 
 void displayScanning() {
-  if (!oledReady) return;
-
-  display.clearDisplay();
-  display.setCursor(0, 0);
-  display.println("Colour sensor");
-  display.println();
-  display.println("Scanning...");
-  display.display();
+  startScreen("Scanning...");
+  display.printf("Samples: %u/%u\n",
+    static_cast<unsigned int>(samplesCollected),
+    static_cast<unsigned int>(SCAN_SAMPLE_COUNT));
+  finishScreen();
 }
 
-void updateButton() {
-  const bool reading = digitalRead(BUTTON_PIN);
+void displayCurrentReading() {
+  const CalibratedReading calibrated = calibrateReading(currentReading);
 
-  if (reading != lastButtonReading) {
-    lastButtonReading = reading;
-    lastButtonChangeAt = millis();
+  startScreen("Averaged scan");
+  display.printf("RGB: %d %d %d\n",
+    roundedChannel(calibrated.red),
+    roundedChannel(calibrated.green),
+    roundedChannel(calibrated.blue));
+  display.printf("Light: %d\n", roundedChannel(calibrated.clear));
+  display.println();
+  display.println("SAVE: keep");
+  display.println("SCAN: redo");
+  finishScreen();
+}
+
+void displayColourASaved() {
+  const CalibratedReading calibrated = calibrateReading(savedColourA);
+
+  startScreen("Colour A saved");
+  display.printf("RGB: %d %d %d\n",
+    roundedChannel(calibrated.red),
+    roundedChannel(calibrated.green),
+    roundedChannel(calibrated.blue));
+  display.printf("Light: %d\n", roundedChannel(calibrated.clear));
+  display.println();
+  display.println("Scan colour B");
+  finishScreen();
+}
+
+void displayPairSaved() {
+  const CalibratedReading calibratedA = calibrateReading(savedColourA);
+  const CalibratedReading calibratedB = calibrateReading(savedColourB);
+  const MatchResult result = compareReadings(savedColourA, savedColourB);
+
+  startScreen("Comparison");
+  display.printf("A: %d %d %d\n",
+    roundedChannel(calibratedA.red),
+    roundedChannel(calibratedA.green),
+    roundedChannel(calibratedA.blue));
+  display.printf("B: %d %d %d\n",
+    roundedChannel(calibratedB.red),
+    roundedChannel(calibratedB.green),
+    roundedChannel(calibratedB.blue));
+  display.println();
+  display.println(result.label);
+  display.printf("Score: %d%%\n", result.score);
+  finishScreen();
+}
+
+bool buttonPressed(Button& button) {
+  const bool reading = digitalRead(button.pin);
+
+  if (reading != button.lastReading) {
+    button.lastReading = reading;
+    button.lastChangeAt = millis();
   }
 
-  if (millis() - lastButtonChangeAt < BUTTON_DEBOUNCE_MS) return;
-  if (reading == buttonState) return;
+  if (millis() - button.lastChangeAt < BUTTON_DEBOUNCE_MS) return false;
+  if (reading == button.stableState) return false;
 
-  buttonState = reading;
+  button.stableState = reading;
+  return button.stableState == LOW;
+}
 
-  if (buttonState == LOW) {
-    captureRequested = true;
-    displayScanning();
-    Serial.println("Scan requested.");
+void beginScan() {
+  if (scanInProgress) return;
+
+  scanInProgress = true;
+  samplesCollected = 0;
+  redTotal = 0;
+  greenTotal = 0;
+  blueTotal = 0;
+  clearTotal = 0;
+  currentReadingAvailable = false;
+
+  // A new scan replaces colour B while keeping colour A as the reference.
+  if (colourBSaved) colourBSaved = false;
+
+  displayScanning();
+  Serial.println("Scan started. Averaging 10 readings...");
+}
+
+void saveCurrentReading() {
+  if (!currentReadingAvailable) {
+    Serial.println("Nothing to save. Press Scan first.");
+    return;
   }
+
+  if (!colourASaved) {
+    savedColourA = currentReading;
+    colourASaved = true;
+    currentReadingAvailable = false;
+    displayColourASaved();
+    Serial.println("Colour A saved.");
+    return;
+  }
+
+  savedColourB = currentReading;
+  colourBSaved = true;
+  currentReadingAvailable = false;
+  displayPairSaved();
+
+  const MatchResult result = compareReadings(savedColourA, savedColourB);
+  Serial.printf(
+    "Colour B saved. Result: %s (%d%%). ",
+    result.label,
+    result.score
+  );
+  Serial.printf(
+    "Colour distance: %.4f, brightness difference: %.1f%%\n",
+    result.colourDistance,
+    result.brightnessDifference * 100.0f
+  );
+}
+
+void clearNewestReading() {
+  if (scanInProgress) {
+    scanInProgress = false;
+    samplesCollected = 0;
+    Serial.println("Scan cancelled.");
+  } else if (currentReadingAvailable) {
+    currentReadingAvailable = false;
+    Serial.println("Unsaved scan cleared.");
+  } else if (colourBSaved) {
+    colourBSaved = false;
+    Serial.println("Colour B cleared; colour A kept.");
+  } else if (colourASaved) {
+    colourASaved = false;
+    Serial.println("Colour A cleared.");
+  } else {
+    Serial.println("Nothing to clear.");
+  }
+
+  if (colourASaved) {
+    displayColourASaved();
+  } else {
+    displayReady();
+  }
+}
+
+void updateButtons() {
+  if (buttonPressed(scanButton)) beginScan();
+  if (buttonPressed(saveButton)) saveCurrentReading();
+  if (buttonPressed(clearButton)) clearNewestReading();
 }
 
 void scanForI2CDevices() {
@@ -107,6 +345,48 @@ void scanForI2CDevices() {
   } else {
     Serial.printf("Scan complete: %d device(s) found.\n", devicesFound);
   }
+}
+
+void collectScanSample(const ColourReading& reading) {
+  if (!scanInProgress) return;
+
+  redTotal += reading.red;
+  greenTotal += reading.green;
+  blueTotal += reading.blue;
+  clearTotal += reading.clear;
+  ++samplesCollected;
+
+  displayScanning();
+
+  if (samplesCollected < SCAN_SAMPLE_COUNT) return;
+
+  currentReading = {
+    static_cast<uint16_t>(redTotal / SCAN_SAMPLE_COUNT),
+    static_cast<uint16_t>(greenTotal / SCAN_SAMPLE_COUNT),
+    static_cast<uint16_t>(blueTotal / SCAN_SAMPLE_COUNT),
+    static_cast<uint16_t>(clearTotal / SCAN_SAMPLE_COUNT)
+  };
+
+  scanInProgress = false;
+  currentReadingAvailable = true;
+  displayCurrentReading();
+
+  Serial.printf(
+    "Averaged R: %u  G: %u  B: %u  Clear: %u\n",
+    static_cast<unsigned int>(currentReading.red),
+    static_cast<unsigned int>(currentReading.green),
+    static_cast<unsigned int>(currentReading.blue),
+    static_cast<unsigned int>(currentReading.clear)
+  );
+
+  const CalibratedReading calibrated = calibrateReading(currentReading);
+  Serial.printf(
+    "Provisional RGB: %d  %d  %d  Light: %d\n",
+    roundedChannel(calibrated.red),
+    roundedChannel(calibrated.green),
+    roundedChannel(calibrated.blue),
+    roundedChannel(calibrated.clear)
+  );
 }
 
 void handleByte(uint8_t value) {
@@ -151,31 +431,14 @@ void handleByte(uint8_t value) {
     return;
   }
 
-  const uint16_t red = readChannel(4);
-  const uint16_t green = readChannel(6);
-  const uint16_t blue = readChannel(8);
-  const uint16_t clear = readChannel(10);
+  const ColourReading reading = {
+    readChannel(4),
+    readChannel(6),
+    readChannel(8),
+    readChannel(10)
+  };
 
-  /*Serial.printf(
-    "R: %u  G: %u  B: %u  Clear: %u\n",
-    static_cast<unsigned int>(red),
-    static_cast<unsigned int>(green),
-    static_cast<unsigned int>(blue),
-    static_cast<unsigned int>(clear)
-  );*/
-
-  if (captureRequested) {
-    captureRequested = false;
-    displayReading(red, green, blue, clear);
-    Serial.printf(
-      "Captured R: %u  G: %u  B: %u  Clear: %u\n",
-      static_cast<unsigned int>(red),
-      static_cast<unsigned int>(green),
-      static_cast<unsigned int>(blue),
-      static_cast<unsigned int>(clear)
-    );
-  }
-
+  collectScanSample(reading);
   lastReadingAt = millis();
 }
 
@@ -183,7 +446,20 @@ void setup() {
   Serial.begin(115200);
   delay(2000);
 
-  pinMode(BUTTON_PIN, INPUT_PULLUP);
+  pinMode(SCAN_BUTTON_PIN, INPUT_PULLUP);
+  pinMode(SAVE_BUTTON_PIN, INPUT_PULLUP);
+  pinMode(CLEAR_BUTTON_PIN, INPUT_PULLUP);
+  delay(10);
+
+  Serial.printf(
+    "Initial buttons - Scan GPIO %d: %s, Save GPIO %d: %s, Clear GPIO %d: %s\n",
+    SCAN_BUTTON_PIN,
+    digitalRead(SCAN_BUTTON_PIN) == LOW ? "pressed" : "released",
+    SAVE_BUTTON_PIN,
+    digitalRead(SAVE_BUTTON_PIN) == LOW ? "pressed" : "released",
+    CLEAR_BUTTON_PIN,
+    digitalRead(CLEAR_BUTTON_PIN) == LOW ? "pressed" : "released"
+  );
 
   Wire.begin(OLED_SDA, OLED_SCL);
   scanForI2CDevices();
@@ -192,15 +468,9 @@ void setup() {
   oledReady = display.begin(SSD1306_SWITCHCAPVCC, OLED_ADDRESS, true, false);
 
   if (oledReady) {
-    display.clearDisplay();
     display.setTextSize(1);
     display.setTextColor(SSD1306_WHITE);
-    display.setCursor(0, 0);
-    display.println("Colour sensor");
-    display.println();
-    display.println("Ready to scan");
-    display.println("Press button");
-    display.display();
+    displayReady();
     Serial.println("OLED ready.");
   } else {
     Serial.println("OLED initialization failed.");
@@ -213,12 +483,12 @@ void setup() {
   delay(100);
   sendCommand(0x84);  // Continuously send raw RGBC readings
 
-  Serial.println("GY-33 test started. Waiting for readings...");
+  Serial.println("GY-33 ready. Use Scan, Save, and Clear.");
   lastReadingAt = millis();
 }
 
 void loop() {
-  updateButton();
+  updateButtons();
 
   while (Serial1.available() > 0) {
     handleByte(static_cast<uint8_t>(Serial1.read()));

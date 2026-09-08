@@ -1,0 +1,33 @@
+# Operating-system metadata
+.DS_Store
+._*
+Thumbs.db
+
+# Editor and temporary files
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Arduino build output
+build/
+.pio/
+*.bin
+*.eep
+*.elf
+*.hex
+*.map
+*.lst
+*.o
+*.a
+*.d
+
+# Local configuration and credentials
+.env
+.env.*
+!.env.example
+secrets*.h
+!secrets.example.h
+credentials*.h
+!credentials.example.h
