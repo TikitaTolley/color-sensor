@@ -21,16 +21,16 @@ constexpr float BRIGHTNESS_DIFFERENCE_WEIGHT = 60.0f;
 constexpr int MATCH_SCORE_THRESHOLD = 85;
 constexpr int SIMILAR_SCORE_THRESHOLD = 45;
 
-// Provisional calibration measured with the sensor shroud held against fabric.
-// Replace these values after the final sensor enclosure is fitted.
-constexpr float BLACK_RED = 47.2f;
-constexpr float BLACK_GREEN = 74.0f;
-constexpr float BLACK_BLUE = 67.8f;
-constexpr float BLACK_CLEAR = 204.4f;
-constexpr float WHITE_RED = 632.2f;
-constexpr float WHITE_GREEN = 825.0f;
-constexpr float WHITE_BLUE = 751.6f;
-constexpr float WHITE_CLEAR = 2317.6f;
+// Calibration measured with the final sensor enclosure fitted.
+// Mean of three scans each of black and white felt; comparison validation pending.
+constexpr float BLACK_RED = 38.0f;
+constexpr float BLACK_GREEN = 64.0f;
+constexpr float BLACK_BLUE = 58.67f;
+constexpr float BLACK_CLEAR = 175.0f;
+constexpr float WHITE_RED = 130.0f;
+constexpr float WHITE_GREEN = 176.33f;
+constexpr float WHITE_BLUE = 163.33f;
+constexpr float WHITE_CLEAR = 496.0f;
 
 struct ColourReading {
   uint16_t red;
