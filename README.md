@@ -3,13 +3,11 @@
 > A handheld ESP32-S3 scanner that compares two fabric colours on a small OLED screen.
 
 <p>
-  <a href="media/finished-makefest-build.webp"><img src="media/finished-makefest-build.webp" alt="Finished Fabric Colour Sensor beside its Liverpool MakeFest datasheet and fabric samples" height="180"></a>
+  <a href="media/finished-makefest-build.webp"><img src="media/finished-makefest-build.webp" alt="Finished Fabric Colour Sensor beside its project datasheet and fabric samples" height="180"></a>
   <a href="media/working-demo.webp"><img src="media/working-demo.webp" alt="Fabric Colour Sensor scanning a sample with its OLED active" height="180"></a>
   <a href="media/colour-sensor-board.webp"><img src="media/colour-sensor-board.webp" alt="Colour sensor ESP32-S3 main perfboard and red, white and blue button controls" height="180"></a>
   <a href="media/colour-sensor-assembly.webp"><img src="media/colour-sensor-assembly.webp" alt="GY-33 colour sensor and illuminated sensing head connected to the fabric scanner circuitry" height="180"></a>
 </p>
-
-Built and exhibited at Liverpool MakeFest on 13 September 2026. The electronics, sensor and three controls worked throughout the event. The current enclosure is an honest event build: two external zip ties were needed to hold the front and rear together because the printed catches did not close reliably.
 
 ## What it does
 
@@ -82,7 +80,7 @@ Recorded profile: Bambu Lab P1S, 0.4 mm nozzle, textured PEI plate, 0.2 mm layer
 | --- | --- |
 | Portfolio | [Fabric Colour Sensor](https://tikitatech.xyz/projects/color-sensor/) |
 | CAD | [Onshape V9 design history](https://cad.onshape.com/documents/f1365f86604a599dc2108d09/w/d51fb6365f3808e14df16205/e/ea2ccd3c4be893841bb637a2) |
-| YouTube | [Liverpool MakeFest overview](https://www.youtube.com/shorts/mE4jw6d4Lig) |
+| YouTube | [Project overview](https://www.youtube.com/shorts/mE4jw6d4Lig) |
 | Instagram | [@tikitatech](https://www.instagram.com/tikitatech/) |
 
 ## Licence
