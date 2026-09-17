@@ -3,8 +3,10 @@
 > A handheld ESP32-S3 scanner that compares two fabric colours on a small OLED screen.
 
 <p>
-  <a href="https://imagedelivery.net/aadSKA0MHXx8wR2sCLu2yg/hardware-color-sensor/finished-makefest-build.webp/public"><img src="https://imagedelivery.net/aadSKA0MHXx8wR2sCLu2yg/hardware-color-sensor/finished-makefest-build.webp/public" alt="Finished Fabric Colour Sensor beside its Liverpool MakeFest datasheet and fabric samples" height="260"></a>
-  <a href="https://imagedelivery.net/aadSKA0MHXx8wR2sCLu2yg/hardware-color-sensor/working-demo.webp/public"><img src="https://imagedelivery.net/aadSKA0MHXx8wR2sCLu2yg/hardware-color-sensor/working-demo.webp/public" alt="Fabric Colour Sensor scanning a sample at Liverpool MakeFest with its OLED active and event enclosure secured by red zip ties" height="260"></a>
+  <a href="media/finished-makefest-build.webp"><img src="media/finished-makefest-build.webp" alt="Finished Fabric Colour Sensor beside its Liverpool MakeFest datasheet and fabric samples" height="180"></a>
+  <a href="media/working-demo.webp"><img src="media/working-demo.webp" alt="Fabric Colour Sensor scanning a sample with its OLED active" height="180"></a>
+  <a href="media/colour-sensor-board.webp"><img src="media/colour-sensor-board.webp" alt="Colour sensor ESP32-S3 main perfboard and red, white and blue button controls" height="180"></a>
+  <a href="media/colour-sensor-assembly.webp"><img src="media/colour-sensor-assembly.webp" alt="GY-33 colour sensor and illuminated sensing head connected to the fabric scanner circuitry" height="180"></a>
 </p>
 
 Built and exhibited at Liverpool MakeFest on 13 September 2026. The electronics, sensor and three controls worked throughout the event. The current enclosure is an honest event build: two external zip ties were needed to hold the front and rear together because the printed catches did not close reliably.
@@ -34,10 +36,8 @@ The illuminated sensor captures a fabric sample, then compares it with a second 
 | 2 | Female socket header strips, cut to 22 contacts | £0.10 per strip |
 | As needed | Hook-up wire, jumpers and solder | Shared supplies |
 | 1 | USB data cable and USB power supply | Already owned |
-| 1 set | Printed frame, front, rear and divider | £5.43 filament* |
+| 1 set | Printed frame, front, rear and divider | £5.43 filament |
 | 2+ | Fabric samples | Shared fabric purchase |
-
-Prices are per part where recorded; pack and kit prices are labelled. *The final enclosure used 48.02 g of white PLA, 49.86 g of grey PLA and 57.17 g of black PETG: 155.05 g total at the recorded DoES rate of £0.035/g. Two earlier fit tests used another 8.23 g, bringing all recorded colour-sensor printing to 163.28 g and £5.71.
 
 ## Wiring
 
@@ -75,15 +75,6 @@ The comparison score is a relative guide: **85-100 Match**, **45-84 Similar**, *
 The current design history is also available in [Onshape](https://cad.onshape.com/documents/f1365f86604a599dc2108d09/w/d51fb6365f3808e14df16205/e/ea2ccd3c4be893841bb637a2).
 
 Recorded profile: Bambu Lab P1S, 0.4 mm nozzle, textured PEI plate, 0.2 mm layers, three walls and 15% infill. The frame uses a 5 mm outer brim. The front and rear use automatic tree supports; the divider prints without supports.
-
-These 3MF files are retained as build history, not as a validated printable release. The electronic and module fit was sufficient for the working MakeFest exhibit, but the front and rear needed two external zip ties. Re-slice and review the printer profile before any future print, and expect to revise the closure before treating the enclosure as finished.
-
-## Build gallery
-
-<p>
-  <a href="media/colour-sensor-board.webp"><img src="media/colour-sensor-board.webp" alt="Colour sensor ESP32-S3 main perfboard and red, white and blue button controls" width="260"></a>
-  <a href="media/colour-sensor-assembly.webp"><img src="media/colour-sensor-assembly.webp" alt="GY-33 colour sensor and illuminated sensing head connected to the fabric scanner circuitry" width="260"></a>
-</p>
 
 ## This project elsewhere
 
