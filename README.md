@@ -74,6 +74,11 @@ The current design history is also available in [Onshape](https://cad.onshape.co
 
 Recorded profile: Bambu Lab P1S, 0.4 mm nozzle, textured PEI plate, 0.2 mm layers, three walls and 15% infill. The frame uses a 5 mm outer brim. The front and rear use automatic tree supports; the divider prints without supports.
 
+## Build videos
+
+- [Build video](https://www.youtube.com/shorts/-kiW49RcAOo)
+- [Prototype to finished build](https://www.youtube.com/shorts/Wy52Uh8I-cg)
+
 ## This project elsewhere
 
 | Where | Link |
