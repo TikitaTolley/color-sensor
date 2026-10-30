@@ -50,6 +50,10 @@ Power the ESP32-S3 by USB. Both modules use 3V3 and a common GND.
 
 The GY-33 uses UART at 9600 baud. The OLED uses I2C address `0x3C`. Buttons use internal pull-ups.
 
+<a href="media/colour-sensor-layout.webp"><img src="media/colour-sensor-layout.webp" alt="Board layout: the ESP32-S3 main perfboard with screw terminals, the button strip, and the OLED and GY-33 modules" height="180"></a>
+
+The layout file is [`layout/colour-sensor.diy`](layout/colour-sensor.diy), which opens in [DIYLC](https://bancika.github.io/diy-layout-creator/).
+
 ## Firmware
 
 1. Install the ESP32 board package in Arduino IDE.
